@@ -1,0 +1,38 @@
+services:
+  tplink-switch-poller-prometheus:
+    build: .
+    container_name: tplink-switch-poller-prometheus
+    restart: unless-stopped
+    ports:
+      - "${METRICS_PORT:-49012}:49012"
+    environment:
+      # Switch connection
+      - SWITCH_HOST=${SWITCH_HOST:-1.1.1.1}
+      - SWITCH_USERNAME=${SWITCH_USERNAME:-admin}
+      - SWITCH_PASSWORD=${SWITCH_PASSWORD:-admin}
+      - SWITCH_NUM_PORTS=${SWITCH_NUM_PORTS:-8}
+      # Cookie TTL in seconds — re-auth only happens after this expires
+      # or if the switch rejects the session mid-flight (302/401)
+      - COOKIE_TTL=${COOKIE_TTL:-300}
+    command:
+      - "--host"
+      - "${SWITCH_HOST:-192.168.31.138}"
+      - "--username"
+      - "${SWITCH_USERNAME:-admin}"
+      - "--password"
+      - "${SWITCH_PASSWORD:-admin}"
+      - "--num-ports"
+      - "${SWITCH_NUM_PORTS:-8}"
+      - "--cookie-ttl"
+      - "${COOKIE_TTL:-300}"
+      - "--port"
+      - "49012"
+    network_mode: host
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:49012/metrics')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      
